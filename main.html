@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kindergarten Art Workshop</title>
+    <!-- 1. Load Tailwind CSS for layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. Load "Gaegu", a handwritten, childlike font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- 3. Custom CSS for the "handmade" aesthetic -->
+    <style>
+        /* Apply the kindergarten font to everything */
+        :root {
+            --paper-color: #89cff0; /* Light blue paper default */
+            --paper-noise-color: #000000;
+        }
+
+        body {
+            font-family: 'Gaegu', cursive;
+            user-select: none;
+            overflow: hidden;
+            font-size: 1.1rem; /* Slightly larger base font */
+        }
+
+        /* SVG filter for construction paper noise texture */
+        /* This is a self-contained way to create a 'paper' feel */
+        svg#texture-filter {
+            position: absolute;
+            width: 0;
+            height: 0;
+        }
+
+        /* The main "workshop table" background */
+        .workshop-table {
+            background-color: #D2B48C; /* Light tan color */
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.05"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#noise)"/></svg>');
+        }
+        
+        /* The main "art canvas" */
+        #art-canvas {
+            background-color: var(--paper-color);
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border: 4px dashed rgba(0,0,0,0.2);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2) inset;
+        }
+        /* The paper texture overlay */
+        #art-canvas::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0.15;
+            filter: url(#paper-noise);
+            background-color: var(--paper-noise-color);
+            pointer-events: none;
+        }
+        
+        /* Style for the buttons to look like they were drawn with a marker */
+        .btn-marker {
+            background-color: #fff;
+            border: 3px solid #333;
+            border-radius: 12px;
+            padding: 8px 16px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px #555;
+            transition: all 0.1s ease;
+        }
+        .btn-marker:hover {
+            background-color: #f0f0f0;
+            box-shadow: 3px 3px 0px #333;
+            transform: translate(-1px, -1px);
+        }
+        .btn-marker:active {
+            background-color: #e0e0e0;
+            box-shadow: 0px 0px 0px #333;
+            transform: translate(2px, 2px);
+        }
+        .btn-marker:disabled {
+            background-color: #ccc;
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Toolbox item style */
+        .tool-item {
+            width: 80px;
+            height: 80px;
+            background-color: #fff;
+            border: 3px dashed #888;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative; /* For tooltips */
+        }
+        .tool-item:hover, .tool-item.active {
+            border-color: #333;
+            border-style: solid;
+            background-color: #f5f5f5;
+        }
+        .tool-item .tooltip {
+            visibility: hidden;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 10px;
+            position: absolute;
+            z-index: 100;
+            bottom: 105%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 1rem;
+            white-space: nowrap;
+        }
+        .tool-item:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Art supply styles */
+        .paper-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #FF69B4; /* Hot pink paper */
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        /* NEW: More realistic cotton ball */
+        .cotton-ball {
+            width: 40px;
+            height: 40px;
+            background-color: #f5f9ff;
+            border-radius: 50%;
+            box-shadow: 
+                inset 0 0 5px #fff,
+                inset 5px 5px 10px #dde,
+                inset -5px -5px 10px #fff,
+                0 0 10px 8px #f0f8ff, 
+                0 0 12px 10px #fff;
+        }
+        
+        /* NEW: Popsicle stick with wood grain */
+        .popsicle-stick {
+            width: 15px;
+            height: 60px;
+            background: linear-gradient(to right, #f0e68c, #d2b48c, #f0e68c);
+            border: 1px solid #c1a67d;
+            border-radius: 5px;
+        }
+
+        .googly-eye {
+            width: 30px;
+            height: 30px;
+            background-color: white;
+            border-radius: 50%;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-left: 3px; /* Make it off-center */
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .googly-pupil {
+            width: 12px;
+            height: 12px;
+            background-color: black;
+            border-radius: 50%;
+            transition: transform 0.05s ease-out;
+        }
+        
+        /* NEW: Pipe cleaner with "fuzzy" texture */
+        .pipe-cleaner {
+            width: 10px;
+            height: 60px;
+            border-radius: 5px;
+            position: relative;
+            background: #98FB98; /* Pale green */
+        }
+        .pipe-cleaner::before {
+            content: '';
+            position: absolute;
+            top: -3px; bottom: -3px; left: -3px; right: -3px;
+            background: transparent;
+            border: 3px dashed #3CB371;
+            border-radius: 8px;
+            opacity: 0.8;
+            box-shadow: 0 0 5px 3px #98FB98;
+        }
+
+        /* NEW: Utensil Stamps */
+        .crayon-stamp, .marker-stamp, .pencil-stamp {
+            font-size: 3.5rem;
+            line-height: 1;
+        }
+
+        /* General class for all draggable art pieces */
+        .art-piece {
+            position: absolute;
+            cursor: grab;
+            /* This gives the "cutout" look */
+            filter: drop-shadow(3px 3px 2px rgba(0,0,0,0.3));
+            transition: filter 0.1s ease, box-shadow 0.1s ease, transform 0.05s linear;
+        }
+        .art-piece:active {
+            cursor: grabbing;
+        }
+        
+        /* Selection highlight for dragging */
+        .selected {
+            box-shadow: 0 0 0 5px rgba(0, 150, 255, 0.7);
+            filter: drop-shadow(3px 3px 2px rgba(0,0,0,0.3)) brightness(1.1);
+            z-index: 50 !important;
+        }
+        
+        /* Selection highlight for grouping */
+        .selected-for-grouping {
+            box-shadow: 0 0 0 5px rgba(255, 105, 180, 0.7); /* Hot pink */
+        }
+
+        /* Destination marker */
+        #destination-marker {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            color: red;
+            font-size: 3rem;
+            font-weight: bold;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none; /* Hidden by default */
+            z-index: 999;
+        }
+
+        /* Pixel Editor Modal */
+        #pixel-editor-modal {
+            font-family: 'Gaegu', cursive;
+        }
+        .pixel-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 30px);
+            grid-template-rows: repeat(8, 30px);
+            border: 2px solid #333;
+            width: 244px; /* 8 * 30 + 4 */
+        }
+        .pixel-cell {
+            width: 30px;
+            height: 30px;
+            background-color: #eee;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        .pixel-cell.colored {
+            background-color: #333; /* Default "marker" color */
+        }
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 0 2px #333;
+        }
+        .color-swatch.selected {
+            box-shadow: 0 0 0 4px #007bff;
+        }
+        .paper-swatch {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #333;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px #555;
+        }
+        .paper-swatch.selected {
+            box-shadow: 0 0 0 4px #007bff, 2px 2px 0px #555;
+        }
+
+        /* NEW: AI Chatbot */
+        #ai-chat-container {
+            font-family: 'Gaegu', cursive;
+            background: #fff;
+            border: 4px solid #333;
+            border-radius: 15px;
+            box-shadow: 5px 5px 0px #555;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #ai-message-log {
+            height: 120px;
+            overflow-y: auto;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .chat-message {
+            padding: 4px 8px;
+            border-radius: 10px;
+            max-width: 90%;
+            word-wrap: break-word;
+        }
+        .chat-message.user {
+            background-color: #d0eaff;
+            align-self: flex-end;
+            text-align: right;
+        }
+        .chat-message.guru {
+            background-color: #f0f0f0;
+            align-self: flex-start;
+        }
+        .chat-message.friend {
+            background-color: #fff8d0;
+            align-self: flex-start;
+            font-style: italic;
+        }
+        .chat-message.teacher {
+            background-color: #e0f8d0;
+            align-self: flex-start;
+            font-style: italic;
+        }
+        #ai-input-form {
+            display: flex;
+            gap: 10px;
+        }
+        #ai-input {
+            flex-grow: 1;
+            border: 2px solid #555;
+            border-radius: 10px;
+            padding: 8px;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+
+<body class="workshop-table w-screen h-screen flex flex-col p-4 gap-4">
+
+    <!-- Title, drawn like a kid's name on their art project -->
+    <h1 class="text-4xl font-bold text-center text-gray-800" style="text-shadow: 1px 1px #fff;">
+        My Kindergarten Art Workshop!
+    </h1>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col md:flex-row gap-4 min-h-0">
+
+        <!-- NEW: Workshop Settings -->
+        <div class="w-full md:w-64 bg-white/50 p-4 rounded-lg border-4 border-dashed border-gray-600 overflow-y-auto flex flex-col gap-3">
+            <h2 class="text-3xl font-bold text-center mb-2">Settings</h2>
+            
+            <h3 class="text-2xl font-bold">Paper Color</h3>
+            <div class="grid grid-cols-4 gap-2">
+                <div class="paper-swatch selected" style="background-color: #89cff0;" data-color="#89cff0" data-noise="#000000"></div>
+                <div class="paper-swatch" style="background-color: #FFB6C1;" data-color="#FFB6C1" data-noise="#000000"></div>
+                <div class="paper-swatch" style="background-color: #98FB98;" data-color="#98FB98" data-noise="#000000"></div>
+                <div class="paper-swatch" style="background-color: #f0f0f0;" data-color="#f0f0f0" data-noise="#000000"></div>
+                <div class="paper-swatch" style="background-color: #FFFFE0;" data-color="#FFFFE0" data-noise="#000000"></div>
+                <div class="paper-swatch" style="background-color: #E6E6FA;" data-color="#E6E6FA" data-noise="#000000"></div>
+                <div class="paper-swatch" style="background-color: #333333;" data-color="#333333" data-noise="#FFFFFF"></div>
+            </div>
+
+            <hr class="border-gray-500 border-dashed border-2 my-2">
+
+            <h3 class="text-2xl font-bold">AI Friend</h3>
+            <select id="ai-friend-select" class="w-full p-2 border-2 border-gray-600 rounded-lg text-lg">
+                <option value="none">No Friend</option>
+                <option value="friend">School Friend</option>
+                <option value="teacher">Teacher</option>
+            </select>
+        </div>
+        
+        <!-- 1. The "Art Supplies" Toolbox -->
+        <div class="w-full md:w-64 bg-white/50 p-4 rounded-lg border-4 border-dashed border-gray-600 overflow-y-auto">
+            <h2 class="text-3xl font-bold text-center mb-2">Art Box</h2>
+            
+            <h3 class="text-2xl font-bold">Supplies</h3>
+            <div class="grid grid-cols-3 md:grid-cols-2 gap-3">
+                <div class="tool-item" data-type="circle">
+                    <div class="paper-circle"></div>
+                    <span class="tooltip">Paper Circle</span>
+                </div>
+                <div class="tool-item" data-type="cotton">
+                    <div class="cotton-ball"></div>
+                    <span class="tooltip">Cotton Ball</span>
+                </div>
+                <div class="tool-item" data-type="stick">
+                    <div class="popsicle-stick"></div>
+                    <span class="tooltip">Popsicle Stick</span>
+                </div>
+                <div class="tool-item" data-type="eye">
+                    <div class="googly-eye"><div class="googly-pupil"></div></div>
+                    <span class="tooltip">Googly Eye</span>
+                </div>
+                <div class="tool-item" data-type="pipe">
+                    <div class="pipe-cleaner"></div>
+                    <span class="tooltip">Pipe Cleaner</span>
+                </div>
+                <div class="tool-item" id="open-pixel-editor">
+                    <svg class="w-10 h-10 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l-1.586-1.586a2 2 0 00-2.828 0L8 14m8 6l-4-4m0 0l-4 4m4-4v4m0 0h4m-4 0H8m4-4l4-4m0 0l4 4m-4-4V4m0 0H8m4 0h4m-4 4l-4 4"></path></svg>
+                    <span class="tooltip">Pixel Stamp</span>
+                </div>
+            </div>
+
+            <h3 class="text-2xl font-bold mt-4">Utensils</h3>
+            <div class="grid grid-cols-3 md:grid-cols-2 gap-3">
+                <div class="tool-item" data-type="crayon">
+                    <div class="crayon-stamp" style="color: #E63946;">🖍️</div>
+                    <span class="tooltip">Crayon Stamp</span>
+                </div>
+                <div class="tool-item" data-type="marker">
+                    <div class="marker-stamp" style="color: #457B9D;">🖊️</div>
+                    <span class="tooltip">Marker Stamp</span>
+                </div>
+                <div class="tool-item" data-type="pencil">
+                    <div class="pencil-stamp" style="color: #F0E68C;">✏️</div>
+                    <span class="tooltip">Pencil Stamp</span>
+                </div>
+                <div class="tool-item" id="scissors-tool">
+                    <div class="marker-stamp">✂️</div>
+                    <span class="tooltip">Scissors Tool</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. The Main "Art Canvas" -->
+        <div class="flex-1 min-h-0 relative">
+            <div id="art-canvas">
+                <!-- Art pieces will be added here -->
+                <div id="destination-marker">X</div>
+            </div>
+        </div>
+
+        <!-- 3. The "Controls" Panel -->
+        <div class="w-full md:w-72 bg-white/50 p-4 rounded-lg border-4 border-dashed border-gray-600 flex flex-col gap-3">
+            <h2 class="text-3xl font-bold text-center mb-2">Controls</h2>
+            
+            <p class="text-center text-lg text-gray-700">(Hold Ctrl/Cmd + Click to select many!)</p>
+
+            <button class="btn-marker" id="link-button">
+                Glue Selected Together! (Link)
+            </button>
+            <button class="btn-marker" id="unlink-button">
+                Pull Apart! (Unlink)
+            </button>
+
+            <hr class="border-gray-500 border-dashed border-2 my-2">
+
+            <button class="btn-marker" id="destination-button">
+                1. Pick Destination
+            </button>
+            <button class="btn-marker" id="play-button" disabled>
+                2. Play Stop-Motion!
+            </button>
+            
+            <hr class="border-gray-500 border-dashed border-2 my-2">
+
+            <button class="btn-marker" id="delete-button" style="background-color: #FFB6C1; border-color: #B22222;">
+                Throw in Trash
+            </button>
+            <button class="btn-marker" id="clear-button" style="background-color: #FFB6C1; border-color: #B22222;">
+                Clean Up (Clear All)
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. NEW: AI Chat Box -->
+    <div id="ai-chat-container">
+        <h3 class="text-2xl font-bold text-center">Ask the Art Guru! 🎨</h3>
+        <div id="ai-message-log">
+            <!-- Messages appear here -->
+        </div>
+        <form id="ai-input-form">
+            <input type="text" id="ai-input" placeholder="Try 'make a green circle' or 'how do I group?'" class="text-lg">
+            <button type="submit" class="btn-marker text-lg">Ask!</button>
+        </form>
+    </div>
+
+    <!-- 5. The Pixel Editor Modal (Hidden by default) -->
+    <div id="pixel-editor-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg border-4 border-black shadow-lg">
+            <h3 class="text-3xl font-bold mb-4">Draw a Pixel Stamp!</h3>
+            <div class="flex gap-4">
+                <div id="pixel-grid" class="pixel-grid"></div>
+                <div class="flex flex-col gap-2">
+                    <h4 class="text-xl font-bold">Crayons</h4>
+                    <div class="color-swatch selected" style="background-color: #333333;" data-color="#333333"></div>
+                    <div class="color-swatch" style="background-color: #E63946;" data-color="#E63946"></div>
+                    <div class="color-swatch" style="background-color: #457B9D;" data-color="#457B9D"></div>
+                    <div class="color-swatch" style="background-color: #A8DADC;" data-color="#A8DADC"></div>
+                    <div class="color-swatch" style="background-color: #F1FAEE;" data-color="#F1FAEE"></div>
+                    <div class="color-swatch" style="background-color: #FFFFFF; border-color: #ccc" data-color="#eee"></div> <!-- Eraser -->
+                </div>
+            </div>
+            <div class="mt-4 flex justify-between">
+                <button class="btn-marker" id="add-pixel-art-button">Add to Canvas</button>
+                <button class="btn-marker" style="background-color: #f0f0f0;" id="close-pixel-editor">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. SVG Noise Filter (hidden) -->
+    <svg id="texture-filter">
+        <filter id="paper-noise">
+            <feTurbulence 
+                type="fractalNoise" 
+                baseFrequency="0.65" 
+                numOctaves="3" 
+                stitchTiles="stitch" />
+        </filter>
+    </svg>
+
+    <!-- 7. Main JavaScript Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const artCanvas = document.getElementById('art-canvas');
+            const destinationMarker = document.getElementById('destination-marker');
+            const playButton = document.getElementById('play-button');
+            const linkButton = document.getElementById('link-button');
+            const unlinkButton = document.getElementById('unlink-button');
+            const destinationButton = document.getElementById('destination-button');
+            const deleteButton = document.getElementById('delete-button');
+            const clearButton = document.getElementById('clear-button');
+            const scissorsToolButton = document.getElementById('scissors-tool');
+            
+            const aiChatLog = document.getElementById('ai-message-log');
+            const aiInputForm = document.getElementById('ai-input-form');
+            const aiInput = document.getElementById('ai-input');
+            const aiFriendSelect = document.getElementById('ai-friend-select');
+
+            // --- State Variables ---
+            let selectedElement = null;
+            let selectedForGrouping = new Set();
+            let isDragging = false;
+            let isSettingDestination = false;
+            let isAnimating = false;
+            let isScissorsActive = false;
+            let animationTarget = null;
+            let offsetX, offsetY;
+            let elementCounter = 0; // To give unique IDs
+            
+            let aiFriendInterval = null;
+            let aiFriendPersona = 'none';
+
+            // --- Drag and Drop Logic ---
+            function startDrag(e) {
+                const target = e.target.closest('.art-piece');
+                if (!target) return;
+
+                // NEW: Handle scissors tool
+                if (isScissorsActive) {
+                    cutArtPiece(target);
+                    return;
+                }
+                
+                // Handle selection for grouping
+                if (e.ctrlKey || e.metaKey) {
+                    if (selectedForGrouping.has(target)) {
+                        selectedForGrouping.delete(target);
+                        target.classList.remove('selected-for-grouping');
+                    } else {
+                        selectedForGrouping.add(target);
+                        target.classList.add('selected-for-grouping');
+                    }
+                    return; // Don't start a drag
+                }
+
+                // Handle normal selection & drag
+                isDragging = true;
+                selectElement(target);
+                
+                const rect = target.getBoundingClientRect();
+                const canvasRect = artCanvas.getBoundingClientRect();
+                
+                // Calculate offset from mouse to element's top-left corner
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+
+                target.style.zIndex = 1000;
+                artCanvas.addEventListener('mousemove', onDrag);
+                artCanvas.addEventListener('mouseup', endDrag);
+                artCanvas.addEventListener('mouseleave', endDrag);
+            }
+
+            function onDrag(e) {
+                if (!isDragging || !selectedElement) return;
+                e.preventDefault();
+
+                const canvasRect = artCanvas.getBoundingClientRect();
+                let newX = e.clientX - canvasRect.left - offsetX;
+                let newY = e.clientY - canvasRect.top - offsetY;
+
+                // Constrain to canvas boundaries
+                newX = Math.max(0, Math.min(newX, canvasRect.width - selectedElement.offsetWidth));
+                newY = Math.max(0, Math.min(newY, canvasRect.height - selectedElement.offsetHeight));
+
+                const deltaX = newX - parseFloat(selectedElement.style.left || 0);
+                const deltaY = newY - parseFloat(selectedElement.style.top || 0);
+
+                moveElement(selectedElement, deltaX, deltaY);
+
+                // If in a group, move all other group members
+                const groupId = selectedElement.dataset.groupId;
+                if (groupId) {
+                    document.querySelectorAll(`.art-piece[data-group-id="${groupId}"]`).forEach(el => {
+                        if (el !== selectedElement) {
+                            moveElement(el, deltaX, deltaY);
+                        }
+                    });
+                }
+            }
+            
+            function moveElement(el, dx, dy) {
+                const newLeft = (parseFloat(el.style.left || 0) + dx);
+                const newTop = (parseFloat(el.style.top || 0) + dy);
+                el.style.left = `${newLeft}px`;
+                el.style.top = `${newTop}px`;
+            }
+
+            function endDrag() {
+                isDragging = false;
+                if (selectedElement) {
+                    selectedElement.style.zIndex = Math.round(parseFloat(selectedElement.style.top) / 10) + 10;
+                }
+                artCanvas.removeEventListener('mousemove', onDrag);
+                artCanvas.removeEventListener('mouseup', endDrag);
+                artCanvas.removeEventListener('mouseleave', endDrag);
+            }
+            
+            function selectElement(target) {
+                // Clear previous selection
+                document.querySelectorAll('.art-piece.selected').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                // Clear grouping selection
+                selectedForGrouping.forEach(el => el.classList.remove('selected-for-grouping'));
+                selectedForGrouping.clear();
+                
+                // Deactivate scissors
+                deactivateScissors();
+
+                // Select new target
+                if (target) {
+                    target.classList.add('selected');
+                    selectedElement = target;
+                    playButton.disabled = !animationTarget;
+                } else {
+                    selectedElement = null;
+                    playButton.disabled = true;
+                }
+            }
+
+            artCanvas.addEventListener('mousedown', (e) => {
+                if (isSettingDestination) {
+                    setDestination(e);
+                } else if (e.target === artCanvas) {
+                    selectElement(null); // Deselect
+                } else {
+                    startDrag(e);
+                }
+            });
+
+            // --- Art Supply Creation ---
+            document.querySelector('.tool-item[data-type="circle"]').addEventListener('click', () => createArtPiece('circle'));
+            document.querySelector('.tool-item[data-type="cotton"]').addEventListener('click', () => createArtPiece('cotton'));
+            document.querySelector('.tool-item[data-type="stick"]').addEventListener('click', () => createArtPiece('stick'));
+            document.querySelector('.tool-item[data-type="eye"]').addEventListener('click', () => createArtPiece('eye'));
+            document.querySelector('.tool-item[data-type="pipe"]').addEventListener('click', () => createArtPiece('pipe'));
+            document.querySelector('.tool-item[data-type="crayon"]').addEventListener('click', () => createArtPiece('crayon'));
+            document.querySelector('.tool-item[data-type="marker"]').addEventListener('click', () => createArtPiece('marker'));
+            document.querySelector('.tool-item[data-type="pencil"]').addEventListener('click', () => createArtPiece('pencil'));
+            
+            function createArtPiece(type, options = {}) {
+                elementCounter++;
+                const el = document.createElement('div');
+                el.classList.add('art-piece');
+                el.dataset.id = `el-${elementCounter}`;
+                el.dataset.type = type;
+                
+                let top = options.top || 50 + (Math.random() * 50);
+                let left = options.left || 50 + (Math.random() * 50);
+                el.style.top = `${top}px`;
+                el.style.left = `${left}px`;
+                el.style.zIndex = 10;
+                
+                const color = options.color || `hsl(${Math.random() * 360}, 70%, 70%)`;
+                
+                if (type === 'circle') {
+                    el.classList.add('paper-circle');
+                    el.style.backgroundColor = color;
+                } else if (type === 'cotton') {
+                    el.classList.add('cotton-ball');
+                } else if (type === 'stick') {
+                    el.classList.add('popsicle-stick');
+                    el.style.transform = `rotate(${Math.random() * 90}deg)`;
+                } else if (type === 'eye') {
+                    el.classList.add('googly-eye');
+                    el.innerHTML = '<div class="googly-pupil"></div>';
+                } else if (type === 'pipe') {
+                    el.classList.add('pipe-cleaner');
+                    el.style.backgroundColor = color;
+                    el.style.setProperty('--shadow-color', color);
+                    const borderColor = options.borderColor || `hsl(${Math.random() * 360}, 40%, 40%)`;
+                    el.style.setProperty('--border-color', borderColor);
+                    el.style.transform = `rotate(${Math.random() * 90}deg)`;
+                } else if (type === 'crayon' || type === 'marker' || type === 'pencil') {
+                    el.classList.add(type === 'crayon' ? 'crayon-stamp' : (type === 'marker' ? 'marker-stamp' : 'pencil-stamp'));
+                    el.innerHTML = type === 'crayon' ? '🖍️' : (type ==='marker' ? '🖊️' : '✏️');
+                    el.style.color = color;
+                    el.style.fontSize = `${3 + Math.random() * 2}rem`;
+                    el.style.backgroundColor = 'transparent';
+                    el.style.filter = 'drop-shadow(2px 2px 1px rgba(0,0,0,0.2))';
+                } else if (type === 'pixel-art') {
+                    el.style.width = '80px';
+                    el.style.height = '80px';
+                    el.style.display = 'grid';
+                    el.style.gridTemplateColumns = 'repeat(8, 1fr)';
+                    el.style.gridTemplateRows = 'repeat(8, 1fr)';
+                    el.style.border = '2px solid #333';
+                    options.grid.forEach(color => {
+                        const pixel = document.createElement('div');
+                        pixel.style.backgroundColor = color;
+                        el.appendChild(pixel);
+                    });
+                }
+
+                artCanvas.appendChild(el);
+            }
+
+            // --- Googly Eye Jiggle ---
+            artCanvas.addEventListener('mousemove', (e) => {
+                const pupils = document.querySelectorAll('.googly-pupil');
+                if (pupils.length === 0 || isDragging) return;
+
+                const canvasRect = artCanvas.getBoundingClientRect();
+                const mouseX = e.clientX - canvasRect.left;
+                const mouseY = e.clientY - canvasRect.top;
+
+                pupils.forEach(pupil => {
+                    const eye = pupil.parentElement;
+                    const eyeRect = eye.getBoundingClientRect();
+                    const eyeCenterX = eyeRect.left - canvasRect.left + eyeRect.width / 2;
+                    const eyeCenterY = eyeRect.top - canvasRect.top + eyeRect.height / 2;
+
+                    const deltaX = mouseX - eyeCenterX;
+                    const deltaY = mouseY - eyeCenterY;
+                    const angle = Math.atan2(deltaY, deltaX);
+
+                    const maxMove = 4; // Max pixels the pupil can move
+                    const moveX = Math.cos(angle) * maxMove;
+                    const moveY = Math.sin(angle) * maxMove;
+
+                    pupil.style.transform = `translate(${moveX}px, ${moveY}px)`;
+                });
+            });
+
+            // --- Grouping Logic ---
+            linkButton.addEventListener('click', () => {
+                if (selectedForGrouping.size < 2) return;
+                
+                const groupId = `group-${Date.now()}`;
+                selectedForGrouping.forEach(el => {
+                    el.dataset.groupId = groupId;
+                    el.classList.remove('selected-for-grouping');
+                });
+                selectedForGrouping.clear();
+            });
+
+            unlinkButton.addEventListener('click', () => {
+                if (selectedElement && selectedElement.dataset.groupId) {
+                    const groupId = selectedElement.dataset.groupId;
+                    document.querySelectorAll(`.art-piece[data-group-id="${groupId}"]`).forEach(el => {
+                        delete el.dataset.groupId;
+                    });
+                }
+                selectedForGrouping.forEach(el => {
+                    delete el.dataset.groupId;
+                    el.classList.remove('selected-for-grouping');
+                });
+                selectedForGrouping.clear();
+            });
+
+            // --- Animation Logic ---
+            destinationButton.addEventListener('click', () => {
+                isSettingDestination = true;
+                artCanvas.style.cursor = 'crosshair';
+                deactivateScissors();
+            });
+
+            function setDestination(e) {
+                const canvasRect = artCanvas.getBoundingClientRect();
+                animationTarget = {
+                    x: e.clientX - canvasRect.left,
+                    y: e.clientY - canvasRect.top
+                };
+                
+                destinationMarker.style.left = `${animationTarget.x}px`;
+                destinationMarker.style.top = `${animationTarget.y}px`;
+                destinationMarker.style.display = 'block';
+                
+                isSettingDestination = false;
+                artCanvas.style.cursor = 'default';
+                
+                if (selectedElement) {
+                    playButton.disabled = false;
+                }
+            }
+
+            playButton.addEventListener('click', () => {
+                if (!selectedElement || !animationTarget || isAnimating) return;
+                isAnimating = true;
+                playButton.disabled = true;
+
+                const elementsToAnimate = [];
+                const groupId = selectedElement.dataset.groupId;
+                if (groupId) {
+                    elementsToAnimate.push(...document.querySelectorAll(`.art-piece[data-group-id="${groupId}"]`));
+                } else {
+                    elementsToAnimate.push(selectedElement);
+                }
+
+                // We animate the "main" selected element, and apply the same delta to all others
+                const mainEl = selectedElement;
+                const otherEls = elementsToAnimate.filter(el => el !== mainEl);
+
+                // Store initial offsets for grouped items
+                const offsets = otherEls.map(el => ({
+                    el: el,
+                    dx: parseFloat(el.style.left) - parseFloat(mainEl.style.left),
+                    dy: parseFloat(el.style.top) - parseFloat(mainEl.style.top)
+                }));
+                
+                // This is the target for the main selected element
+                const targetX = animationTarget.x - (mainEl.offsetWidth / 2);
+                const targetY = animationTarget.y - (mainEl.offsetHeight / 2);
+
+                function step() {
+                    if (!isAnimating) return;
+
+                    let currentX = parseFloat(mainEl.style.left);
+                    let currentY = parseFloat(mainEl.style.top);
+
+                    let dx = targetX - currentX;
+                    let dy = targetY - currentY;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 5) {
+                        // Stop animation
+                        mainEl.style.left = `${targetX}px`;
+                        mainEl.style.top = `${targetY}px`;
+                        offsets.forEach(item => {
+                            item.el.style.left = `${targetX + item.dx}px`;
+                            item.el.style.top = `${targetY + item.dy}px`;
+                        });
+                        
+                        isAnimating = false;
+                        playButton.disabled = false;
+                        return;
+                    }
+
+                    // Move 5% of the way, plus a "jitter" for stop-motion feel
+                    let moveX = dx * 0.05 + (Math.random() - 0.5) * 4;
+                    let moveY = dy * 0.05 + (Math.random() - 0.5) * 4;
+
+                    let newX = currentX + moveX;
+                    let newY = currentY + moveY;
+
+                    mainEl.style.left = `${newX}px`;
+                    mainEl.style.top = `${newY}px`;
+                    
+                    offsets.forEach(item => {
+                        item.el.style.left = `${newX + item.dx}px`;
+                        item.el.style.top = `${newY + item.dy}px`;
+                    });
+                    
+                    requestAnimationFrame(step);
+                }
+                
+                step();
+            });
+
+            // --- Delete / Clear Logic ---
+            deleteButton.addEventListener('click', () => {
+                if (selectedElement) {
+                    const groupId = selectedElement.dataset.groupId;
+                    if (groupId) {
+                        document.querySelectorAll(`.art-piece[data-group-id="${groupId}"]`).forEach(el => el.remove());
+                    } else {
+                        selectedElement.remove();
+                    }
+                    selectElement(null);
+                }
+                selectedForGrouping.forEach(el => el.remove());
+                selectedForGrouping.clear();
+            });
+
+            clearButton.addEventListener('click', () => {
+                artCanvas.querySelectorAll('.art-piece').forEach(el => el.remove());
+                destinationMarker.style.display = 'none';
+                animationTarget = null;
+                selectElement(null);
+                selectedForGrouping.clear();
+            });
+            
+            // --- NEW: Utensil Logic ---
+            scissorsToolButton.addEventListener('click', () => {
+                isScissorsActive = !isScissorsActive;
+                if (isScissorsActive) {
+                    scissorsToolButton.classList.add('active');
+                    artCanvas.style.cursor = 'crosshair';
+                    isSettingDestination = false;
+                    selectElement(null);
+                } else {
+                    deactivateScissors();
+                }
+            });
+
+            function deactivateScissors() {
+                isScissorsActive = false;
+                scissorsToolButton.classList.remove('active');
+                artCanvas.style.cursor = 'default';
+            }
+
+            function cutArtPiece(target) {
+                if (!target.dataset.type) return;
+
+                const type = target.dataset.type;
+                const style = getComputedStyle(target);
+                const oldWidth = parseFloat(style.width);
+                const oldHeight = parseFloat(style.height);
+                const oldLeft = parseFloat(target.style.left);
+                const oldTop = parseFloat(target.style.top);
+                const oldColor = style.backgroundColor;
+                
+                // Create two smaller pieces
+                const piece1 = document.createElement('div');
+                const piece2 = document.createElement('div');
+                
+                piece1.className = target.className;
+                piece2.className = target.className;
+                
+                // Copy relevant styles
+                piece1.style.cssText = target.style.cssText;
+                piece2.style.cssText = target.style.cssText;
+                
+                // Make them smaller
+                piece1.style.width = `${oldWidth * 0.7}px`;
+                piece1.style.height = `${oldHeight * 0.7}px`;
+                piece2.style.width = `${oldWidth * 0.7}px`;
+                piece2.style.height = `${oldHeight * 0.7}px`;
+                
+                // Reposition them
+                piece1.style.left = `${oldLeft - oldWidth * 0.1}px`;
+                piece1.style.top = `${oldTop - oldHeight * 0.1}px`;
+                piece2.style.left = `${oldLeft + oldWidth * 0.1}px`;
+                piece2.style.top = `${oldTop + oldHeight * 0.1}px`;
+                
+                // Rotate them
+                piece1.style.transform = `rotate(-15deg)`;
+                piece2.style.transform = `rotate(15deg)`;
+
+                // Special handling for eyes
+                if (type === 'eye') {
+                    piece1.innerHTML = '<div class="googly-pupil"></div>';
+                    piece2.innerHTML = '<div class="googly-pupil"></div>';
+                }
+
+                artCanvas.appendChild(piece1);
+                artCanvas.appendChild(piece2);
+                target.remove();
+                deactivateScissors();
+            }
+
+            // --- NEW: Workshop Settings Logic ---
+            document.querySelectorAll('.paper-swatch').forEach(swatch => {
+                swatch.addEventListener('click', () => {
+                    document.querySelectorAll('.paper-swatch').forEach(s => s.classList.remove('selected'));
+                    swatch.classList.add('selected');
+                    document.documentElement.style.setProperty('--paper-color', swatch.dataset.color);
+                    document.documentElement.style.setProperty('--paper-noise-color', swatch.dataset.noise);
+                });
+            });
+
+            // --- Pixel Editor Logic ---
+            const pixelModal = document.getElementById('pixel-editor-modal');
+            const pixelGrid = document.getElementById('pixel-grid');
+            const swatches = pixelModal.querySelectorAll('.color-swatch');
+            let pixelColor = '#333333';
+            let isPainting = false;
+
+            // Generate 8x8 grid
+            for (let i = 0; i < 64; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('pixel-cell');
+                cell.addEventListener('mousedown', (e) => {
+                    isPainting = true;
+                    e.target.style.backgroundColor = pixelColor;
+                });
+                cell.addEventListener('mouseover', (e) => {
+                    if (isPainting) {
+                        e.target.style.backgroundColor = pixelColor;
+                    }
+                });
+                pixelGrid.appendChild(cell);
+            }
+            document.body.addEventListener('mouseup', () => isPainting = false);
+            
+            // Color swatch logic
+            swatches.forEach(swatch => {
+                swatch.addEventListener('click', () => {
+                    swatches.forEach(s => s.classList.remove('selected'));
+                    swatch.classList.add('selected');
+                    pixelColor = swatch.dataset.color;
+                });
+            });
+
+            // Open/Close Modal
+            document.getElementById('open-pixel-editor').addEventListener('click', () => pixelModal.classList.remove('hidden'));
+            document.getElementById('close-pixel-editor').addEventListener('click', () => pixelModal.classList.add('hidden'));
+            
+            // Save Pixel Art
+            document.getElementById('add-pixel-art-button').addEventListener('click', () => {
+                const gridData = [];
+                pixelGrid.querySelectorAll('.pixel-cell').forEach(cell => {
+                    gridData.push(cell.style.backgroundColor || '#eee');
+                });
+                
+                createArtPiece('pixel-art', { grid: gridData });
+                pixelModal.classList.add('hidden');
+                
+                // Clear grid for next time
+                pixelGrid.querySelectorAll('.pixel-cell').forEach(cell => {
+                    cell.style.backgroundColor = '#eee';
+                });
+            });
+
+            // --- NEW: AI "Art Guru" Logic ---
+            const apiKey = ""; // API key is handled by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const systemPrompt = `You are 'Art Guru,' a helpful and very friendly art teacher in a kindergarten class. You *never* use complex words. You *always* respond with simple, encouraging, and creative sentences (1-2 sentences max). You love construction paper, googly eyes, and glue. If a user asks a complex question, you answer it in the simplest, most childlike way possible. If a user is mean or uses a bad word, you respond kindly, "Oh, no! We only use nice words in the art room. Let's make a pretty picture instead!"`;
+
+            aiInputForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const prompt = aiInput.value.trim();
+                if (!prompt) return;
+
+                aiInput.value = '';
+                addChatMessage(prompt, 'user');
+                
+                // First, check for local commands
+                if (!await handleLocalCommand(prompt)) {
+                    // If not a local command, call the generative AI
+                    await callGenerativeAI(prompt);
+                }
+            });
+            
+            function addChatMessage(text, sender, isLoading = false) {
+                const message = document.createElement('div');
+                message.classList.add('chat-message', sender);
+                message.textContent = text;
+                if (isLoading) {
+                    message.id = 'loading-message';
+                }
+                aiChatLog.appendChild(message);
+                aiChatLog.scrollTop = aiChatLog.scrollHeight;
+                return message;
+            }
+
+            async function handleLocalCommand(prompt) {
+                const text = prompt.toLowerCase();
+                const rudeWords = ['poop', 'butt', 'stupid', 'hate'];
+                
+                if (rudeWords.some(word => text.includes(word))) {
+                    addChatMessage("Oh, no! We only use nice words in the art room. Let's make a pretty picture instead!", 'guru');
+                    return true;
+                }
+                
+                if (text.includes('help') || text.includes('how do i')) {
+                    if (text.includes('group') || text.includes('glue') || text.includes('link')) {
+                        addChatMessage("To glue things together, hold the 'Ctrl' (or 'Cmd' on Mac) key and click all the pieces. Then press the 'Glue Selected Together!' button!", 'guru');
+                    } else if (text.includes('animate') || text.includes('move')) {
+                        addChatMessage("First, click the 'Pick Destination' button and click where you want it to go. Then, click your art piece and press 'Play Stop-Motion!'", 'guru');
+                    } else if (text.includes('cut') || text.includes('scissors')) {
+                        addChatMessage("Click the 'Scissors' tool in the 'Utensils' box, then click on any art piece to cut it in half! Click the scissors tool again to turn it off.", 'guru');
+                    } else if (text.includes('pixel') || text.includes('stamp')) {
+                        addChatMessage("Click the 'Pixel Stamp' (it looks like a grid) in the 'Supplies' box to open the pixel editor!", 'guru');
+                    } else {
+                        return false; // Let the generative AI handle general help
+                    }
+                    return true;
+                }
+
+                if (text.startsWith('create') || text.startsWith('make') || text.startsWith('give me')) {
+                    const numberMatch = text.match(/\d+/);
+                    const count = numberMatch ? parseInt(numberMatch[0]) : 1;
+                    
+                    let color = null;
+                    const colors = {
+                        'red': '#E63946', 'blue': '#457B9D', 'green': '#98FB98', 
+                        'pink': '#FF69B4', 'yellow': '#F0E68C', 'purple': '#E6E6FA'
+                    };
+                    for (const cName in colors) {
+                        if (text.includes(cName)) {
+                            color = colors[cName];
+                            break;
+                        }
+                    }
+
+                    let itemType = null;
+                    if (text.includes('circle')) itemType = 'circle';
+                    else if (text.includes('cotton')) itemType = 'cotton';
+                    else if (text.includes('stick') || text.includes('popsicle')) itemType = 'stick';
+                    else if (text.includes('eye') || text.includes('googly')) itemType = 'eye';
+                    else if (text.includes('pipe')) itemType = 'pipe';
+                    
+                    if (itemType) {
+                        for(let i = 0; i < count; i++) {
+                            createArtPiece(itemType, { color: color });
+                        }
+                        addChatMessage(`Okay! I made ${count} ${itemType}(s) for you!`, 'guru');
+                        return true;
+                    }
+                }
+                
+                return false; // Not a local command
+            }
+
+            async function callGenerativeAI(prompt) {
+                const loadingMessage = addChatMessage("Hmm, I'm thinking...", 'guru', true);
+                
+                // Implement exponential backoff for retries
+                let delay = 1000;
+                for (let i = 0; i < 5; i++) { // Retry up to 5 times
+                    try {
+                        const payload = {
+                            contents: [{ parts: [{ text: prompt }] }],
+                            systemInstruction: { parts: [{ text: systemPrompt }] }
+                        };
+
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            if (response.status === 429 || response.status >= 500) {
+                                // Throttling or server error, wait and retry
+                                throw new Error(`APIError ${response.status}`);
+                            } else {
+                                // Client-side error, don't retry
+                                const errorResult = await response.json();
+                                console.error("API Error:", errorResult);
+                                loadingMessage.textContent = "Oh, my crayons are broken! I can't think right now.";
+                                return;
+                            }
+                        }
+
+                        const result = await response.json();
+                        const candidate = result.candidates?.[0];
+
+                        if (candidate && candidate.content?.parts?.[0]?.text) {
+                            loadingMessage.remove();
+                            addChatMessage(candidate.content.parts[0].text, 'guru');
+                        } else {
+                            throw new Error("Invalid AI response structure");
+                        }
+                        
+                        return; // Success, exit retry loop
+
+                    } catch (error) {
+                        if (error.message.includes("APIError")) {
+                            // This is a retryable error
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            delay *= 2; // Exponential backoff
+                        } else {
+                            // Non-retryable error
+                            console.error("Fetch Error:", error);
+                            loadingMessage.textContent = "Oh, my crayons are broken! I can't think right now.";
+                            return;
+                        }
+                    }
+                }
+                // If we exit the loop, it means all retries failed
+                loadingMessage.textContent = "Oh, my crayons are broken! I'm all out of ideas right now.";
+            }
+
+            // --- NEW: AI Friend Logic ---
+            aiFriendSelect.addEventListener('change', (e) => {
+                aiFriendPersona = e.target.value;
+                if (aiFriendInterval) {
+                    clearInterval(aiFriendInterval);
+                }
+                if (aiFriendPersona !== 'none') {
+                    aiFriendInterval = setInterval(aiFriendChatter, 30000); // Talk every 30 seconds
+                }
+            });
+
+            function aiFriendChatter() {
+                const friendMessages = [
+                    "Wow, cool!", "What are you making?", "That's awesome!", 
+                    "Let's add more googly eyes!", "I like that color!", "This is fun!"
+                ];
+                const teacherMessages = [
+                    "What a creative start!", "Remember, you can group items by holding Ctrl.",
+                    "That's a beautiful use of color!", "What will you add next?", 
+                    "Keep up the wonderful work!", "Don't forget you can use the scissors tool!"
+                ];
+                
+                let messages = [];
+                let sender = 'friend';
+                
+                if (aiFriendPersona === 'friend') {
+                    messages = friendMessages;
+                    sender = 'friend';
+                } else if (aiFriendPersona === 'teacher') {
+                    messages = teacherMessages;
+                    sender = 'teacher';
+                } else {
+                    return;
+                }
+                
+                const msg = messages[Math.floor(Math.random() * messages.length)];
+                addChatMessage(msg, sender);
+            }
+            
+            // Initial welcome message
+            addChatMessage("Hi! I'm the Art Guru. Ask me for help or to make things!", 'guru');
+        });
+    </script>
+</body>
+</html>
