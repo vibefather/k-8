@@ -1,0 +1,521 @@
+import os
+import random
+import math
+import json
+from collections import defaultdict
+from PIL import Image, ImageDraw, ImageFont # Import Pillow
+
+
+# --- ANSI Color Codes (iSH compatible) ---
+class Colors:
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+    ITALIC = "\033[3m"
+    UNDERLINE = "\033[4m"
+    RED = "\033[91m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    BLUE = "\033[94m"
+    MAGENTA = "\033[95m"
+    CYAN = "\033[96m"
+    WHITE = "\033[97m"
+    
+    # Background Colors
+    BG_BLACK = "\033[40m"
+    BG_DARK_RED = "\033[41m"
+    BG_DARK_GREEN = "\033[42m"
+    BG_DARK_YELLOW = "\033[43m"
+    BG_DARK_BLUE = "\033[44m"
+    BG_DARK_MAGENTA = "\033[45m"
+    BG_DARK_CYAN = "\033[46m"
+    BG_WHITE = "\033[47m"
+
+    # Brighter Background Colors (some terminals might support these)
+    BG_BRIGHT_BLACK = "\033[100m"
+    BG_BRIGHT_RED = "\033[101m"
+    BG_BRIGHT_GREEN = "\033[102m"
+    BG_BRIGHT_YELLOW = "\033[103m"
+    BG_BRIGHT_BLUE = "\033[104m"
+    BG_BRIGHT_MAGENTA = "\033[105m"
+    BG_BRIGHT_CYAN = "\033[106m"
+    BG_BRIGHT_WHITE = "\033[107m"
+
+
+# --- Configuration for Terminal Size ---
+TERMINAL_WIDTH = 80
+TERMINAL_HEIGHT = 40
+
+# --- Helper: Map ANSI color codes to RGB tuples for Pillow ---
+# This is a simplified mapping based on common terminal colors.
+# Full accuracy requires more detailed color standards or lookup tables.
+def ansi_to_rgb(ansi_code_string, is_bg=False):
+    # Strip non-numeric parts and split by ; to get codes
+    codes = [int(c) for c in ansi_code_string.replace('\033[', '').replace('m', '').split(';') if c.isdigit()]
+    
+    # Default colors (approximate, for standard 16 ANSI colors)
+    color_map = {
+        # Foreground
+        90: (128, 128, 128), # Grey
+        91: (255, 0, 0),     # Red
+        92: (0, 255, 0),     # Green
+        93: (255, 255, 0),   # Yellow
+        94: (0, 0, 255),     # Blue
+        95: (255, 0, 255),   # Magenta
+        96: (0, 255, 255),   # Cyan
+        97: (255, 255, 255), # White
+        # Background (often darker versions of foreground)
+        40: (0, 0, 0),       # Black
+        41: (128, 0, 0),     # Dark Red
+        42: (0, 128, 0),     # Dark Green
+        43: (128, 128, 0),   # Dark Yellow
+        44: (0, 0, 128),     # Dark Blue
+        45: (128, 0, 128),   # Dark Magenta
+        46: (0, 128, 128),   # Dark Cyan
+        47: (192, 192, 192), # Light Grey
+        # Bright Backgrounds (using same bright foregrounds for approximation)
+        100: (128, 128, 128), # Bright Black (Grey)
+        101: (255, 0, 0),     # Bright Red
+        102: (0, 255, 0),     # Bright Green
+        103: (255, 255, 0),   # Bright Yellow
+        104: (0, 0, 255),     # Bright Blue
+        105: (255, 0, 255),   # Bright Magenta
+        106: (0, 255, 255),   # Bright Cyan
+        107: (255, 255, 255)  # Bright White
+    }
+    
+    # Handle BOLD/DIM for a slight adjustment if present (simple approx)
+    rgb = None
+    is_bold = False
+    is_dim = False
+
+    for code in codes:
+        if code == 1: is_bold = True
+        if code == 2: is_dim = True
+        if code in color_map:
+            rgb = color_map[code]
+    
+    if rgb is None: # Fallback for reset or unknown codes
+        if is_bg: return (0,0,0) # Default black background
+        return (255,255,255) # Default white foreground
+
+    # Apply bold/dim influence (simplified for RGB)
+    if is_bold and not is_bg:
+        rgb = tuple(min(255, c + 60) for c in rgb) # Make brighter
+    elif is_dim and not is_bg:
+        rgb = tuple(max(0, c - 60) for c in rgb) # Make darker
+
+    return rgb
+
+
+# --- Bonsai Node Class ---
+class BonsaiNode:
+    next_id = 0
+    def __init__(self, world_pos, parent=None, node_type="root"):
+        self.id = BonsaiNode.next_id
+        BonsaiNode.next_id += 1
+        self.world_pos = world_pos # {x, y} float coordinates
+        self.parent = parent
+        self.children = []
+        self.type = node_type # "root", "quantum", "crystal", "branch"
+        self.glyph_influence = random.choice(["default", "energetic", "geometric", "ancient"]) # Added 'ancient'
+
+    def grow(self, preferred_type=None):
+        angle_spread = math.pi / 2 # Nodes grow within a 90 degree arc
+        angle_base = -math.pi / 2 # Base for growing upwards
+
+        if self.parent:
+            # Grow roughly upwards/outwards from parent
+            dx = self.world_pos['x'] - self.parent.world_pos['x']
+            dy = self.world_pos['y'] - self.parent.world_pos['y']
+            parent_angle = math.atan2(dx, -dy) # Angle relative to parent, -dy because world y increases upwards
+            angle = random.uniform(parent_angle - angle_spread/2, parent_angle + angle_spread/2)
+        else: # Root node growth (generally upwards from base)
+            angle = random.uniform(angle_base, angle_base + angle_spread)
+
+        distance = random.uniform(8, 20) # Shorter distances for more dense ASCII
+
+        new_world_x = self.world_pos['x'] + math.sin(angle) * distance
+        new_world_y = self.world_pos['y'] - math.cos(angle) * distance # Subtract for "upwards" growth on world Y axis
+
+        node_type = preferred_type if preferred_type else random.choice(["quantum", "crystal"])
+        new_node = BonsaiNode({'x': new_world_x, 'y': new_world_y}, parent=self, node_type=node_type)
+        self.children.append(new_node)
+        return new_node
+
+    def prune(self):
+        if self.parent:
+            self.parent.children = [c for c in self.parent.children if c.id != self.id]
+            return True
+        return False # Cannot prune root
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'world_pos': self.world_pos,
+            'parent_id': self.parent.id if self.parent else None,
+            'type': self.type,
+            'glyph_influence': self.glyph_influence,
+            'children_ids': [child.id for child in self.children]
+        }
+
+    @classmethod
+    def from_dict(cls, data, node_map):
+        node = cls(data['world_pos'], node_type=data['type'])
+        node.id = data['id']
+        node.glyph_influence = data['glyph_influence']
+        node_map[node.id] = node
+        return node
+
+    # Helper to get all nodes (useful for auto-grow and display/pruning)
+    def get_all_nodes(self):
+        nodes = [self]
+        for child in self.children:
+            nodes.extend(child.get_all_nodes())
+        return nodes
+
+# --- GlyphSet / TypographicByproduct ---
+class GlyphSet:
+    def __init__(self, name="default"):
+        self.name = name
+        # Using standardized, widely supported ASCII and basic box-drawing Unicode
+        self.chars = {
+            'root_node': (Colors.WHITE + Colors.BOLD + Colors.BG_DARK_GREEN, '#'), 
+            'quantum_node': (Colors.MAGENTA + Colors.BOLD + Colors.BG_BLACK, '@'), 
+            'crystal_node': (Colors.CYAN + Colors.BOLD + Colors.BG_BLACK, '$'), 
+            'branch_H': (Colors.GREEN + Colors.BG_BLACK, '─'), # Box drawing horizontal
+            'branch_V': (Colors.GREEN + Colors.BG_BLACK, '│'), # Box drawing vertical
+            'branch_DR': (Colors.GREEN + Colors.BG_BLACK, '╭'), # Box drawing down-right
+            'branch_DL': (Colors.GREEN + Colors.BG_BLACK, '╮'), # Box drawing down-left
+            'branch_UR': (Colors.GREEN + Colors.BG_BLACK, '╯'), # Box drawing up-right
+            'branch_UL': (Colors.GREEN + Colors.BG_BLACK, '╰'), # Box drawing up-left
+            'leaf_cluster': (Colors.GREEN + Colors.DIM + Colors.BG_BLACK, ','), # Comma for foliage
+            'quantum_glow': (Colors.MAGENTA + Colors.DIM + Colors.BG_BLACK, '*'), # Asterisk for glow
+            'crystal_glow': (Colors.CYAN + Colors.DIM + Colors.BG_BLACK, '+'), # Plus sign for glow
+            'background': (Colors.BG_DARK_BLUE, ' ') # Default background for empty canvas areas
+        }
+
+    def apply_byproduct(self, byproduct):
+        for key, value in byproduct.chars.items():
+            if key in self.chars:
+                self.chars[key] = value
+
+class TypographicByproduct(GlyphSet):
+    def __init__(self, name, custom_chars=None):
+        super().__init__(name)
+        if custom_chars:
+            self.chars.update(custom_chars)
+
+# --- ASCII Canvas ---
+class ASCII_CANVAS:
+    def __init__(self, width, height, bg_char=' ', bg_color=Colors.BG_DARK_BLUE):
+        self.width = width
+        self.height = height
+        # Canvas stores (color_code_string, character_string) tuples
+        self.canvas = [[(bg_color, bg_char) for _ in range(width)] for _ in range(height)]
+        self.bg_color = bg_color
+        self.bg_char = bg_char
+
+    def clear(self):
+        self.canvas = [[(self.bg_color, self.bg_char) for _ in range(self.width)] for _ in range(self.height)]
+
+    def set_char(self, x, y, char_tuple):
+        # char_tuple is (color_code_string, char_string)
+        if 0 <= x < self.width and 0 <= y < self.height:
+            self.canvas[y][x] = char_tuple
+
+    def render(self):
+        os.system('clear' if os.name == 'posix' else 'cls') # Clear terminal
+        for row in self.canvas:
+            line = ""
+            for color, char in row:
+                line += color + char + Colors.RESET # Apply color and reset
+            print(line)
+
+# --- Bonsai Renderer ---
+class BonsaiRenderer:
+    def __init__(self, canvas_obj, current_glyph_set):
+        self.canvas = canvas_obj
+        self.glyph_set = current_glyph_set
+        self.min_world_x = float('inf')
+        self.max_world_x = float('-inf')
+        self.min_world_y = float('inf')
+        self.max_world_y = float('-inf')
+
+    def _update_world_bounds(self, node):
+        self.min_world_x = min(self.min_world_x, node.world_pos['x'])
+        self.max_world_x = max(self.max_world_x, node.world_pos['x'])
+        self.min_world_y = min(self.min_world_y, node.world_pos['y'])
+        self.max_world_y = max(self.max_world_y, node.world_pos['y'])
+        for child in node.children:
+            self._update_world_bounds(child)
+
+    def _world_to_grid(self, world_pos):
+        padding = 5 # Padding from terminal edges
+        
+        # Calculate scaling factors
+        world_width = self.max_world_x - self.min_world_x
+        world_height = self.max_world_y - self.min_world_y
+
+        if world_width <= 0: world_width = 1
+        if world_height <= 0: world_height = 1
+
+        # Calculate scale to fit the tree within the canvas dimensions,
+        # preserving aspect ratio.
+        target_width = self.canvas.width - 2 * padding
+        target_height = self.canvas.height - 2 * padding
+        
+        scale_x = target_width / world_width
+        scale_y = target_height / world_height
+        
+        scale = min(scale_x, scale_y) # Use the smaller scale to fit both dimensions
+        
+        # Calculate offsets for centering
+        # After scaling, calculate the actual rendered width/height
+        rendered_width = world_width * scale
+        rendered_height = world_height * scale
+        
+        offset_x = (target_width - rendered_width) / 2 + padding
+        offset_y = (target_height - rendered_height) / 2 + padding
+
+        grid_x = int((world_pos['x'] - self.min_world_x) * scale + offset_x)
+        # Invert Y for drawing: world Y increases upwards (tree grows up), screen Y increases downwards (rows)
+        grid_y = int((self.max_world_y - world_pos['y']) * scale + offset_y)
+        
+        return grid_x, grid_y
+
+    def _grid_to_world(self, grid_x, grid_y):
+        # Inverse of _world_to_grid for placing nodes by screen coordinates
+        padding = 5
+        world_width = self.max_world_x - self.min_world_x
+        world_height = self.max_world_y - self.min_world_y
+
+        if world_width <= 0: world_width = 1
+        if world_height <= 0: world_height = 1
+
+        target_width = self.canvas.width - 2 * padding
+        target_height = self.canvas.height - 2 * padding
+        
+        scale_x = target_width / world_width
+        scale_y = target_height / world_height
+        
+        scale = min(scale_x, scale_y)
+        
+        rendered_width = world_width * scale
+        rendered_height = world_height * scale
+        
+        offset_x = (target_width - rendered_width) / 2 + padding
+        offset_y = (target_height - rendered_height) / 2 + padding
+
+        # Invert the scaling and offset
+        world_x = (grid_x - offset_x) / scale + self.min_world_x
+        world_y = self.max_world_y - (grid_y - offset_y) / scale # Invert Y back
+
+        return {'x': world_x, 'y': world_y}
+
+
+    def _draw_line_chars(self, x0, y0, x1, y1, char_tuple):
+        # Basic Bresenham's-like line for character placement
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+        sx = 1 if x0 < x1 else -1
+        sy = 1 if y0 < y1 else -1
+        err = dx - dy
+
+        while True:
+            self.canvas.set_char(x0, y0, char_tuple)
+            if x0 == x1 and y0 == y1:
+                break
+            e2 = 2 * err
+            if e2 > -dy:
+                err -= dy
+                x0 += sx
+            if e2 < dx:
+                err += dx
+                y0 += sy
+
+    def draw_tree(self, root_node):
+        self.canvas.clear()
+        if not root_node: return
+
+        # 1. First pass to calculate world bounds for scaling
+        self.min_world_x, self.max_world_x = float('inf'), float('-inf')
+        self.min_world_y, self.max_world_y = float('inf'), float('-inf')
+        self._update_world_bounds(root_node)
+        # If tree is just a root, ensure some bounds for proper scaling
+        if self.min_world_x == float('inf'): # This means tree is empty or just one node
+             self.min_world_x = root_node.world_pos['x'] - 10
+             self.max_world_x = root_node.world_pos['x'] + 10
+             self.min_world_y = root_node.world_pos['y'] - 10
+             self.max_world_y = root_node.world_pos['y'] + 10
+
+        # 2. Second pass to draw branches (drawn first so nodes are on top)
+        def draw_branches_recursive(node):
+            if node.parent:
+                grid_pos_node = self._world_to_grid(node.world_pos)
+                grid_pos_parent = self._world_to_grid(node.parent.world_pos)
+                
+                # Determine specific box-drawing character for branches
+                if grid_pos_parent[0] == grid_pos_node[0]: # Vertical line
+                    branch_char_tuple = self.glyph_set.chars['branch_V']
+                elif grid_pos_parent[1] == grid_pos_node[1]: # Horizontal line
+                    branch_char_tuple = self.glyph_set.chars['branch_H']
+                else: # Diagonal - using a simple '+'
+                    branch_char_tuple = (Colors.GREEN + Colors.BG_BLACK, '+') 
+                
+                self._draw_line_chars(
+                    grid_pos_parent[0], grid_pos_parent[1],
+                    grid_pos_node[0], grid_pos_node[1],
+                    branch_char_tuple
+                )
+            for child in node.children:
+                draw_branches_recursive(child)
+        draw_branches_recursive(root_node)
+
+
+        # 3. Third pass to draw nodes and their glows
+        def draw_nodes_recursive(node):
+            grid_x, grid_y = self._world_to_grid(node.world_pos)
+            char_tuple = self.glyph_set.chars.get(f'{node.type}_node', (Colors.WHITE, '#')) # Fallback to '#'
+            self.canvas.set_char(grid_x, grid_y, char_tuple)
+
+            # Draw glow/foliage for quantum/crystal nodes
+            if node.type in ["quantum", "crystal"]:
+                glow_char_tuple = self.glyph_set.chars.get(f'{node.type}_glow')
+                if glow_char_tuple:
+                    # Place glow characters around the node
+                    for dx in [-1, 0, 1]:
+                        for dy in [-1, 0, 1]:
+                            if dx == 0 and dy == 0: continue # Don't overwrite the node itself
+                            if random.random() < 0.5: # Random sparsity for artistic effect
+                                self.canvas.set_char(grid_x + dx, grid_y + dy, glow_char_tuple)
+
+            for child in node.children:
+                draw_nodes_recursive(child)
+        draw_nodes_recursive(root_node)
+
+
+# --- Image Exporter ---
+# Global variable for the font used in image export
+# You might need to specify a full path to a .ttf or .otf file.
+# For simplicity, we'll try a generic font that Pillow can often find,
+# or you can download one and put it next to your script, e.g., 'PressStart2P-Regular.ttf'
+try:
+    # Attempt to load a common monospaced font
+    # This might require font files to be present on the system or next to the script
+    # On many Linux systems, DejaVuSansMono.ttf is a good bet.
+    FONT_PATH = "DejaVuSansMono.ttf" # Or 'Hack-Regular.ttf', 'FiraMono-Regular.ttf', etc.
+    # We need a font size that fits well into our 8x8 cell
+    # A size of 6 or 7 usually works for an 8x8 pixel cell
+    IMAGE_FONT = ImageFont.truetype(FONT_PATH, 7)
+except IOError:
+    # Fallback to a default Pillow font if the specified one isn't found
+    print(f"{Colors.RED}Warning: Font '{FONT_PATH}' not found. Using default Pillow font. Image quality may vary.{Colors.RESET}")
+    IMAGE_FONT = ImageFont.load_default() # This is often an 8x8 bitmap font
+
+
+class ImageExporter:
+    CHAR_CELL_SIZE = 8 # Each character from ASCII_CANVAS will be rendered as 8x8 pixels
+
+    def __init__(self, canvas_obj):
+        self.canvas = canvas_obj
+
+    def export_to_image(self, filename="output.png"):
+        img_width = self.canvas.width * self.CHAR_CELL_SIZE
+        img_height = self.canvas.height * self.CHAR_CELL_SIZE
+
+        # Create a new RGB image. 'RGB' mode for full color.
+        # Background can be transparent initially or set to a default.
+        image = Image.new('RGB', (img_width, img_height), color=ansi_to_rgb(self.canvas.bg_color, is_bg=True))
+        draw = ImageDraw.Draw(image)
+
+        for y in range(self.canvas.height):
+            for x in range(self.canvas.width):
+                color_code, char = self.canvas.canvas[y][x]
+                fg_rgb = ansi_to_rgb(color_code, is_bg=False)
+                bg_rgb = ansi_to_rgb(color_code, is_bg=True) # Get BG color from the tuple
+
+                # Calculate pixel coordinates for the current character cell
+                px_x = x * self.CHAR_CELL_SIZE
+                px_y = y * self.CHAR_CELL_SIZE
+
+                # Draw the background color of the cell
+                draw.rectangle([(px_x, px_y), (px_x + self.CHAR_CELL_SIZE - 1, px_y + self.CHAR_CELL_SIZE - 1)], fill=bg_rgb)
+
+                # Draw the character
+                if char != ' ': # Don't draw a space if we've already filled the background
+                    # Pillow's text drawing needs to be positioned for the character to fit centrally
+                    # This offset might need fine-tuning depending on the font.
+                    draw.text((px_x, px_y), char, font=IMAGE_FONT, fill=fg_rgb)
+        
+        try:
+            image.save(filename)
+            print(f"{Colors.GREEN}Image exported to {filename}{Colors.RESET}")
+        except Exception as e:
+            print(f"{Colors.RED}Error exporting image: {e}{Colors.RESET}")
+
+
+# --- Game State ---
+orchard = {} # {tree_name: root_node}
+typographic_byproducts = {} # {byproduct_name: TypographicByproduct_object}
+global_glyph_set = GlyphSet("default") # The base glyph set
+
+# --- Auto-Grow Logic ---
+def auto_grow_trees(num_growths=1):
+    if not orchard:
+        return
+    for _ in range(num_growths):
+        tree_name = random.choice(list(orchard.keys()))
+        root = orchard[tree_name]
+        all_nodes = root.get_all_nodes()
+        if all_nodes:
+            parent_node = random.choice(all_nodes)
+            new_node = parent_node.grow()
+            print(f"{Colors.DIM}(Auto-grow: {tree_name} grew {new_node.type} node ID {new_node.id}){Colors.RESET}")
+        else: # If a tree has somehow become empty, remove it or re-plant
+            print(f"{Colors.DIM}(Auto-grow: Tree '{tree_name}' is empty. You might want to prune it or plant a new one.){Colors.RESET}")
+
+# --- CLI Functions ---
+def _clear_terminal():
+    os.system('clear' if os.name == 'posix' else 'cls')
+
+def display_help():
+    _clear_terminal()
+    print(f"{Colors.YELLOW}{Colors.BOLD}Quantum Gardens CLI Help:{Colors.RESET}")
+    print(f"  {Colors.CYAN}plant <name>{Colors.RESET}             : Plant a new bonsai tree at default location.")
+    print(f"  {Colors.CYAN}plant_at <name> <grid_x> <grid_y>{Colors.RESET} : Plant a new bonsai tree at a specific screen coordinate.")
+    print(f"  {Colors.CYAN}grow <tree_name> <parent_node_id>{Colors.RESET} : Grow a new node on a tree.")
+    print(f"  {Colors.CYAN}grow_at <tree_name> <parent_node_id> <grid_x> <grid_y>{Colors.RESET} : Grow a new node at a screen coordinate.")
+    print(f"  {Colors.CYAN}prune <tree_name> <node_id>{Colors.RESET}   : Prune a node (and its branch).")
+    print(f"  {Colors.CYAN}view <tree_name>{Colors.RESET}          : Display the ASCII art of a tree.")
+    print(f"  {Colors.CYAN}list{Colors.RESET}                     : List all your planted trees.")
+    print(f"  {Colors.CYAN}harvest_glyph <tree_name> <node_id>{Colors.RESET} : Harvest a glyph byproduct from a node.")
+    print(f"  {Colors.CYAN}list_glyphs{Colors.RESET}              : Show harvested glyphs.")
+    print(f"  {Colors.CYAN}apply_glyph <tree_name> <byproduct_name>{Colors.RESET} : Apply a byproduct to a specific tree (currently global).")
+    print(f"  {Colors.CYAN}set_global_glyph <byproduct_name>{Colors.RESET} : Set a byproduct as the default for all trees.")
+    print(f"  {Colors.CYAN}save{Colors.RESET}                     : Save your orchard progress.")
+    print(f"  {Colors.CYAN}load{Colors.RESET}                     : Load your orchard progress.")
+    print(f"  {Colors.CYAN}export_image <tree_name> [filename.png]{Colors.RESET} : Export tree view to an image file.")
+    print(f"  {Colors.CYAN}exit{Colors.RESET}                     : Exit the game.")
+    print(f"{Colors.RESET}")
+
+
+def plant_tree(name, grid_x=None, grid_y=None):
+    if name in orchard:
+        print(f"{Colors.RED}Error: Tree '{name}' already exists.{Colors.RESET}")
+        return
+    
+    initial_pos = None
+    if grid_x is not None and grid_y is not None:
+        # To convert grid_x, grid_y to world_pos, we need existing world bounds.
+        # For a new root, we don't have existing bounds.
+        # A simple approach: assume grid_x, grid_y are within the canvas for planting.
+        # We'll map grid_y (screen top-down) to world_y (increasing upwards)
+        # and scale grid_x to a large world_x space for consistency.
+        # This is a rough initial estimate.
+        world_x = float(grid_x) * 10 
+        world_y = float(TERMINAL_HEIGHT - grid_y) * 10 # Map screen Y to world Y
+        initial_pos = {'x': world_x, 'y': world_y}
+    else:
+        # Default position near the bottom center of the world space
+        initial_pos = {'x': TERMINAL_WIDTH / 2 * 10, '
