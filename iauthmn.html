@@ -1,0 +1,349 @@
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+import matplotlib.animation 
+from mpl_toolkits.mplot3d import Axes3D
+from qutip import Qobj, basis, sigmaz, sigmax, mesolve, Bloch, rand_dm_ginibre, tensor, bell_state
+import torch
+import pygame
+from pygame.locals import *
+import multiprocessing as mp
+import time
+
+# ---
+# This is the "Reverse Automata Engine" / "Quantum Fibonacci OS"
+# It combines all the concepts from the blueprint images into a single,
+# executable Python simulation, using all the libraries discussed
+# (Python, Pygame, Torch, Matplotlib, Qutip, NetworkX, Multiprocessing).
+# ---
+
+class QuantumFibonacciKernel:
+    def __init__(self):
+        self.version = "v0.01"
+        self.fib_sequence = [0, 1]
+        self.qubit = basis(2, 0)
+        self.hamiltonian_base = sigmaz()
+        print(f"Booting Enhanced Quantum Fibonacci OS Kernel {self.version}...")
+
+    # --- v1: Forward Time / Creation ---
+    def generate_fib(self, n):
+        """Generates the Fibonacci sequence. (Matches IMG_0629)"""
+        while len(self.fib_sequence) < n:
+            next_fib = self.fib_sequence[-1] + self.fib_sequence[-2]
+            self.fib_sequence.append(next_fib)
+        return self.fib_sequence[:n]
+
+    # --- v2: Reverse Time / Destruction ---
+    def reverse_fib(self):
+        """Reverses the sequence. (Matches IMG_0630, 'Reverse Time')"""
+        return self.fib_sequence[::-1]
+
+    # --- Quantum Logic ---
+    def simulate_quantum_evolution(self, steps=10):
+        """
+        Simulates qubit evolution. (Matches IMG_0560, IMG_0561)
+        The Hamiltonian is driven by the Golden Ratio / Fibonacci sequence.
+        """
+        print("Running quantum simulation...")
+        times = np.linspace(0, 10, steps)
+        fib_ratios = [self.fib_sequence[i+1]/self.fib_sequence[i] for i in range(1, len(self.fib_sequence)-1) if self.fib_sequence[i] != 0]
+        
+        if fib_ratios:
+            # Average of Fibonacci ratios (converges to Golden Ratio)
+            # This is the 'Quantum Fibonacci' connection.
+            hamiltonian = sum(r * (sigmax() + sigmaz()) for r in fib_ratios) / len(fib_ratios)
+        else:
+            hamiltonian = self.hamiltonian_base
+            
+        result = mesolve(Qobj(hamiltonian), self.qubit, times)
+        self.qubit = result.states[-1]
+        return result.states
+
+    # --- AI Agent Interface (The "Guru") ---
+    def ai_agent_interface(self):
+        """Placeholder for the 'Guru' AI Agent concept."""
+        print("AI Agent Interface activated: Overseer monitoring recursive events.")
+        print("Warning: Al Wars detected - Meta Reneg Rers initiating conflict simulation.")
+
+    # --- Compiler Fabric (Rust/Cython/LLVM/Wasm) ---
+    def llm_mass_compiler(self):
+        """Placeholder for the Compiler Fabric concept."""
+        print("LLM/Mass Compiler engaged: Compiling Computer Fabric with Fibonacci recursion.")
+
+    # --- Automata Graph World (The Tiling OS) ---
+    def hex_graph_structure(self):
+        """
+        Builds the Hexagonal 'Tiling System' / 'Graph World'. (Matches IMG_0657)
+        Uses networkx.
+        """
+        print("Building Hexagonal Graph Structure...")
+        try:
+            m = 3  # Layers for ring-like structure
+            G = nx.hexagonal_lattice_graph(2*m-1, 2*m-1, periodic=False, with_positions=True)
+            pos = nx.get_node_attributes(G, 'pos')
+            
+            # Add central kernel node and connect to inner ring (approximate)
+            central = 'Kernel'
+            G.add_node(central, pos=(m-0.5, m-0.5))  # Approximate center
+            for node in list(G.nodes())[:6]:  # Connect to first few nodes
+                G.add_edge(central, node)
+            
+            # Plot
+            plt.figure(figsize=(8,8))
+            nx.draw(G, pos, with_labels=False, node_size=50, node_color='#00bfff')
+            plt.title("Hexagonal Graph Structure for OS Kernel")
+            plt.show(block=False)
+        except Exception as e:
+            print(f"Could not plot Hex Graph (matplotlib backend issue?): {e}")
+
+    # --- Topology (From CA Simulator) ---
+    def trefoil_knot_plot(self):
+        """
+        Plots the 'Triple Toric Trefoil Knot' topology. (Matches IMG_0657 text)
+        """
+        print("Plotting Trefoil Knot Topology...")
+        try:
+            phi = np.linspace(0, 2*np.pi, 100)
+            x = np.sin(phi) + 2*np.sin(2*phi)
+            y = np.cos(phi) - 2*np.cos(2*phi)
+            z = -np.sin(3*phi)
+            
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            ax.plot(x, y, z, label='Trefoil Knot')
+            ax.set_title("Triple Toric Trefoil Knot with Qubit Entanglement Convergence")
+            ax.legend()
+            plt.show(block=False)
+        except Exception as e:
+            print(f"Could not plot 3D Knot (matplotlib backend issue?): {e}")
+
+    # --- Quantum Entanglement Visualization ---
+    def bloch_sphere_entangled(self):
+        """
+        Shows the 'Bloch Sphere' for an entangled state. (Matches IMG_0560)
+        Uses qutip.
+        """
+        print("Visualizing Entangled Bloch Spheres...")
+        try:
+            # Entangled Bell state
+            psi = bell_state('00')
+            rho = psi * psi.dag()
+            
+            # Reduced density matrices for each qubit
+            rho_a = rho.ptrace(0)
+            rho_b = rho.ptrace(1)
+            
+            # Note: b.show() blocks execution. Using b.save() is an alternative.
+            # For this script, we'll just prep them.
+            print("  - Qubit A (ptrace 0): At center, max entropy (entangled)")
+            print(rho_a)
+            print("  - Qubit B (ptrace 1): At center, max entropy (entangled)")
+            print(rho_b)
+            # b1 = Bloch()
+            # b1.add_states(rho_a)
+            # b1.show() # This would block the script
+            # b2 = Bloch()
+            # b2.add_states(rho_b)
+            # b2.show() # This would block the script
+        except Exception as e:
+            print(f"Could not render Bloch Spheres: {e}")
+
+    # --- AI/Evolutionary Algorithm ---
+    def darwin_evolutionary(self):
+        """
+        Simple Evolutionary Algorithm ('Darwin').
+        Uses torch.
+        """
+        print("Running 'Darwin' Evolutionary Convergence...")
+        # Simple GA to optimize a quadratic function (simulate convergence)
+        def fitness(x):
+            return -torch.sum(x**2)  # Maximize to 0
+        
+        population_size = 50
+        dim = 10
+        generations = 100
+        population = torch.randn(population_size, dim)
+        
+        for gen in range(generations):
+            fits = torch.tensor([fitness(ind) for ind in population])
+            parents = population[torch.topk(fits, population_size//2).indices]
+            children = parents + 0.1 * torch.randn_like(parents)
+            population = torch.cat([parents, children])
+        
+        best_fitness = fitness(population[torch.argmax(fits)])
+        print(f"Evolutionary simulation complete. Best Fitness: {best_fitness.item()}")
+
+    # --- Cyber Loom Weaver (Threading/Kubernetes concept) ---
+    def melts_pure_byte_data(self):
+        """
+        Simulates 'Cyber Loom Weaver' threading. (Matches 'Loom' memory)
+        Uses multiprocessing.
+        """
+        print("Melting and Weaving byte data...")
+        # Simple byte data transformation ("melts")
+        byte_data = bytearray(b'pure_byte_data')
+        melted = bytearray([b ^ 0xFF for b in byte_data])  # Invert bits
+        print(f"Melted byte data: {melted.hex()}")
+        
+        # Placeholder for Kubernetes/Java: Simulate thread weaving
+        def weaver_thread(data):
+            # time.sleep(0.1) # Simulate work
+            return data[::-1]  # Reverse as "weaving"
+        
+        with mp.Pool(2) as pool:  # Cyber Loom Weaver with threads
+            woven = pool.map(weaver_thread, [melted, melted])
+        print(f"Woven data (reversed): {woven[0].hex()}")
+
+    # --- Cellular Automata (Game of Life) ---
+    def cellular_automata_globby(self):
+        """
+        Runs a 'Globby' (Game of Life) simulation. (Matches IMG_0657)
+        Uses numpy and matplotlib.animation.
+        """
+        print("Initializing Cellular Automata...")
+        try:
+            N = 50
+            ON, OFF = 1, 0
+            grid = np.random.choice([ON, OFF], N*N, p=[0.2, 0.8]).reshape(N, N)
+            
+            def update(frameNum, img, grid, N):
+                newGrid = grid.copy()
+                for i in range(N):
+                    for j in range(N):
+                        # Sum neighbors with toroidal (wrapping) boundary conditions
+                        total = int((grid[i, (j-1)%N] + grid[i, (j+1)%N] +
+                                     grid[(i-1)%N, j] + grid[(i+1)%N, j] +
+                                     grid[(i-1)%N, (j-1)%N] + grid[(i-1)%N, (j+1)%N] +
+                                     grid[(i+1)%N, (j-1)%N] + grid[(i+1)%N, (j+1)%N]))
+                        
+                        # Apply Conway's rules
+                        if grid[i, j] == ON:
+                            if (total < 2) or (total > 3):
+                                newGrid[i, j] = OFF
+                        else:
+                            if total == 3:
+                                newGrid[i, j] = ON
+                img.set_array(newGrid)
+                grid[:] = newGrid[:]
+                return img,
+            
+            fig, ax = plt.subplots()
+            img = ax.imshow(grid, interpolation='nearest')
+            # Note: This animation will run for 50 frames.
+            ani = matplotlib.animation.FuncAnimation(fig, update, fargs=(img, grid, N),
+                                              frames=50, interval=50, save_count=50)
+            plt.title("Cellular Automata ('Globby')")
+            plt.show(block=False)
+        except Exception as e:
+            print(f"Could not plot Cellular Automata (matplotlib backend issue?): {e}")
+
+    # --- Pygame Graphical OS (AI Wars) ---
+    def al_wars_game(self):
+        """
+        Runs a simple 'Al Wars' Pygame simulation on a hex grid.
+        This represents the 'Graphical OS' layer.
+        """
+        print("Booting 'Al Wars' Graphical Simulation...")
+        try:
+            pygame.init()
+            screen = pygame.display.set_mode((800, 600))
+            pygame.display.set_caption("Al Wars: Hex Grid AI Agents")
+            clock = pygame.time.Clock()
+            
+            # Simple hex grid params
+            hex_size = 40
+            agents = [(200, 200), (400, 300), (600, 400)]  # Agent positions
+            colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+            
+            # Run for a short time (e.g., 100 frames)
+            for _ in range(100):
+                for event in pygame.event.get():
+                    if event.type == QUIT:
+                        pygame.quit()
+                        return
+                
+                screen.fill((20, 20, 30)) # Dark blue background
+                
+                # Draw hex grid (approximate)
+                for y in range(0, 600 + hex_size, int(hex_size * 1.5)):
+                    for x in range(0, 800 + hex_size, int(hex_size * 1.732)):
+                        # Simple hex points
+                        points = [
+                            (x + hex_size * 0.866, y + hex_size * 0.5),
+                            (x + hex_size * 0.866, y - hex_size * 0.5),
+                            (x, y - hex_size),
+                            (x - hex_size * 0.866, y - hex_size * 0.5),
+                            (x - hex_size * 0.866, y + hex_size * 0.5),
+                            (x, y + hex_size),
+                        ]
+                        pygame.draw.polygon(screen, (50, 50, 80), points, 2)
+                
+                # Move agents randomly (simple AI)
+                for i in range(len(agents)):
+                    dx, dy = np.random.randint(-5, 6), np.random.randint(-5, 6)
+                    agents[i] = ((agents[i][0] + dx) % 800, (agents[i][1] + dy) % 600)
+                    pygame.draw.circle(screen, colors[i], agents[i], 10)
+                
+                pygame.display.flip()
+                clock.tick(30)
+            
+            pygame.quit()
+            print("'Al Wars' simulation complete.")
+        except Exception as e:
+            print(f"Could not run Pygame (display server issue?): {e}")
+
+    # --- The "Boot Sequence" that ties it all together ---
+    def boot_sequence(self):
+        """
+        This runs the full sequence, demonstrating the
+        'Forward Time' and 'Reverse Time' concepts. (Matches IMG_0629/0630)
+        """
+        print("--- V1: CREATION / FORWARD TIME ---")
+        forward = self.generate_fib(10)
+        print(f"Fibonacci Forward: {forward}")
+        
+        self.ai_agent_interface()
+        self.llm_mass_compiler()
+        
+        states = self.simulate_quantum_evolution(steps=5)
+        print(f"Quantum State: {states[-1].dims} {states[-1].shape}")
+        
+        print("\n--- V2: DESTRUCTION / BACKWARD TIME ---")
+        backward = self.reverse_fib()
+        print(f"Fibonacci Backward: {backward}")
+        
+        print("\n--- INITIALIZING KERNEL MODULES ---")
+        self.darwin_evolutionary()
+        self.melts_pure_byte_data()
+        
+        print("\n--- LAUNCHING GRAPHICAL SUBSYSTEMS ---")
+        # These will open plot windows.
+        # They may close quickly or run sequentially depending on your Matplotlib backend.
+        self.hex_graph_structure()
+        self.trefoil_knot_plot()
+        self.bloch_sphere_entangled()
+        self.cellular_automata_globby()
+        
+        # Launch the Pygame simulation last
+        self.al_wars_game()
+        
+        print("\n--- ENHANCED KERNEL SIMULATION COMPLETE ---")
+        print("All plots may be open in separate windows.")
+        print("Press Enter to shut down...")
+        try:
+            # Keep script alive so user can see plots
+            input()
+        except EOFError:
+            pass # Running in non-interactive environment
+
+if __name__ == "__main__":
+    # Note: This script will open multiple Matplotlib and Pygame windows.
+    # You may need to close them manually to proceed.
+    # Set multiprocessing start method for compatibility
+    try:
+        mp.set_start_method('spawn')
+    except RuntimeError:
+        pass
+        
+    kernel = QuantumFibonacciKernel()
+    kernel.boot_sequence()
