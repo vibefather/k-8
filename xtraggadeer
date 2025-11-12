@@ -1,0 +1,151 @@
+    # ... previous code ...
+    # --- Cellular Automata (Game of Life) ---
+    def cellular_automata_globby(self):
+        """
+        Runs a 'Globby' (Game of Life) simulation. (Matches IMG_0657)
+        Uses numpy and matplotlib.animation.
+        """
+        print("Initializing Cellular Automata 'Globby' Simulation...")
+        try:
+            N = 100
+            ON = 255
+            OFF = 0
+            vals = [ON, OFF]
+            
+            # Initial state with random "life" blobs
+            grid = np.random.choice(vals, N*N, p=[0.2, 0.8]).reshape(N, N)
+
+            def update(frameNum, img, grid, N):
+                newGrid = grid.copy()
+                for i in range(N):
+                    for j in range(N):
+                        # Calculate the sum of the 8 neighbors (toroidal wrap around)
+                        total = int(grid[i, (j-1)%N] + grid[i, (j+1)%N] +
+                                    grid[(i-1)%N, j] + grid[(i+1)%N, j] +
+                                    grid[(i-1)%N, (j-1)%N] + grid[(i-1)%N, (j+1)%N] +
+                                    grid[(i+1)%N, (j-1)%N] + grid[(i+1)%N, (j+1)%N]) / 255
+                        
+                        # Apply Conway's rules of life
+                        if grid[i, j] == ON:
+                            if (total < 2) or (total > 3):
+                                newGrid[i, j] = OFF # Dies
+                        else:
+                            if total == 3:
+                                newGrid[i, j] = ON  # Becomes alive
+
+                # Update data
+                img.set_data(newGrid)
+                grid[:] = newGrid[:]
+                return img,
+
+            # Set up animation
+            fig, ax = plt.subplots()
+            img = ax.imshow(grid, interpolation='nearest')
+            plt.title("Cellular Automata ('Globby') Simulation")
+            ani = matplotlib.animation.FuncAnimation(fig, update, fargs=(img, grid, N),
+                                                    frames=10, # Limiting frames for non-blocking execution example
+                                                    interval=50,
+                                                    save_count=50,
+                                                    blit=True)
+            plt.show(block=False)
+            print("Cellular Automata animation started (non-blocking).")
+
+        except Exception as e:
+            print(f"Could not run CA simulation (matplotlib backend issue?): {e}")
+
+    # --- Pygame Interface (The "OS" GUI) ---
+    def pygame_gui_interface(self):
+        """
+        Runs the full Pygame interface ('OS GUI').
+        (Matches the GUI mockups: 'Compiler Fabric', 'Genesis Point', etc.)
+        Uses pygame.
+        """
+        print("Launching Pygame 'Quantum Fibonacci OS' GUI...")
+        try:
+            pygame.init()
+            # Dimensions based on blueprint UI
+            width, height = 800, 600
+            screen = pygame.display.set_mode((width, height))
+            pygame.display.set_caption(f"QFK {self.version} GUI: Genesis Point Active")
+            
+            # Colors
+            WHITE = (255, 255, 255)
+            BLACK = (0, 0, 0)
+            BLUE_GLOW = (0, 100, 255)
+
+            running = True
+            font = pygame.font.Font(None, 36)
+            
+            while running:
+                for event in pygame.event.get():
+                    if event.type == QUIT:
+                        running = False
+                    if event.type == KEYDOWN:
+                        if event.key == K_ESCAPE:
+                            running = False
+
+                screen.fill(BLACK)
+                
+                # Render UI elements as per the blueprint style
+                # 1. Title/Status
+                text_surface = font.render(f"Quantum Fibonacci OS Kernel v{self.version}", True, BLUE_GLOW)
+                screen.blit(text_surface, (10, 10))
+                
+                # 2. Status updates
+                status_text = [
+                    "Status: Genesis Point Active",
+                    "CPU Load: Recursive",
+                    f"Last Fibonacci Num: {self.fib_sequence[-1]}",
+                    "AI Guru Status: Overseeing Recursive Events"
+                ]
+                for i, line in enumerate(status_text):
+                    line_surface = font.render(line, True, WHITE)
+                    screen.blit(line_surface, (10, 50 + i * 30))
+
+                # 3. Simple graphic placeholder (e.g. a 'Loom' rectangle)
+                pygame.draw.rect(screen, BLUE_GLOW, (width - 110, 10, 100, 580), 2)
+                loom_text = font.render("Cyber Loom", True, BLUE_GLOW)
+                screen.blit(loom_text, (width - 105, 5))
+                
+                pygame.display.flip()
+            
+            pygame.quit()
+
+        except Exception as e:
+            print(f"Could not run Pygame GUI: {e}")
+
+
+# --- Main Execution Block ---
+if __name__ == '__main__':
+    kernel = QuantumFibonacciKernel()
+    
+    # 1. Core Fibonacci Sequence Generation
+    fib_seq = kernel.generate_fib(15)
+    print(f"Generated Fibonacci Sequence: {fib_seq}")
+    print(f"Reversed Sequence (Time Destruction Simulation): {kernel.reverse_fib()}")
+
+    # 2. Quantum Logic Simulation
+    quantum_states = kernel.simulate_quantum_evolution(steps=20)
+    print(f"Quantum state evolved to: {kernel.qubit.unit()}")
+    kernel.bloch_sphere_entangled()
+
+    # 3. AI and Compiler Logic (Placeholders)
+    kernel.ai_agent_interface()
+    kernel.llm_mass_compiler()
+    kernel.melts_pure_byte_data()
+
+    # 4. AI/Evolutionary Algorithm (Torch)
+    kernel.darwin_evolutionary()
+
+    # 5. Visualizations (Matplotlib/NetworkX)
+    print("Starting visualizations (will open separate matplotlib windows)...")
+    kernel.hex_graph_structure()
+    kernel.trefoil_knot_plot()
+    kernel.cellular_automata_globby() # The completed function
+
+    print("--- Execution Complete. Launching GUI last, blocks execution until closed. ---")
+
+    # 6. Launch the Pygame GUI (Must be last because it enters a main loop)
+    kernel.pygame_gui_interface()
+
+    print("All simulations terminated.")
