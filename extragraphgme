@@ -1,0 +1,230 @@
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from qutip import Qobj, basis, sigmaz, sigmax, mesolve, Bloch, rand_dm_ginibre, tensor, bell_state
+import torch
+import pygame
+from pygame.locals import *
+import multiprocessing as mp
+import time
+
+class QuantumFibonacciKernel:
+    def __init__(self):
+        self.version = "v0.01"
+        self.fib_sequence = [0, 1]
+        self.qubit = basis(2, 0)
+        self.hamiltonian_base = sigmaz()
+        print(f"Booting Enhanced Quantum Fibonacci OS Kernel {self.version}...")
+
+    def generate_fib(self, n):
+        while len(self.fib_sequence) < n:
+            next_fib = self.fib_sequence[-1] + self.fib_sequence[-2]
+            self.fib_sequence.append(next_fib)
+        return self.fib_sequence[:n]
+
+    def reverse_fib(self):
+        return self.fib_sequence[::-1]
+
+    def simulate_quantum_evolution(self, steps=10):
+        times = np.linspace(0, 10, steps)
+        fib_ratios = [self.fib_sequence[i+1]/self.fib_sequence[i] for i in range(1, len(self.fib_sequence)-1) if self.fib_sequence[i] != 0]
+        if fib_ratios:
+            hamiltonian = sum(r * (sigmax() + sigmaz()) for r in fib_ratios) / len(fib_ratios)
+        else:
+            hamiltonian = self.hamiltonian_base
+        result = mesolve(Qobj(hamiltonian), self.qubit, times)
+        self.qubit = result.states[-1]
+        return result.states
+
+    def ai_agent_interface(self):
+        print("AI Agent Interface activated: Overseer monitoring recursive events.")
+        print("Warning: Al Wars detected - Meta Reneg Rers initiating conflict simulation.")
+
+    def llm_mass_compiler(self):
+        print("LLM/Mass Compiler engaged: Compiling Computer Fabric with Fibonacci recursion.")
+
+    # New: Hexagonal Graph Structure
+    def hex_graph_structure(self):
+        m = 3  # Layers for ring-like structure
+        G = nx.hexagonal_lattice_graph(2*m-1, 2*m-1, periodic=False, with_positions=True)
+        pos = nx.get_node_attributes(G, 'pos')
+        
+        # Add central kernel node and connect to inner ring (approximate)
+        central = 'Kernel'
+        G.add_node(central, pos=(m-0.5, m-0.5))  # Approximate center
+        for node in list(G.nodes())[:6]:  # Connect to first few nodes
+            G.add_edge(central, node)
+        
+        # Plot
+        plt.figure(figsize=(8,8))
+        nx.draw(G, pos, with_labels=False, node_size=50)
+        plt.title("Hexagonal Graph Structure for OS Kernel")
+        plt.show()
+
+    # New: Triple Toric Trefoil Knot
+    def trefoil_knot_plot(self):
+        phi = np.linspace(0, 2*np.pi, 100)
+        x = np.sin(phi) + 2*np.sin(2*phi)
+        y = np.cos(phi) - 2*np.cos(2*phi)
+        z = -np.sin(3*phi)
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.plot(x, y, z, label='Trefoil Knot')
+        ax.set_title("Triple Toric Trefoil Knot with Qubit Entanglement Convergence")
+        ax.legend()
+        plt.show()
+
+    # New: Qubit Bloch Sphere with Entanglement
+    def bloch_sphere_entangled(self):
+        # Entangled Bell state
+        psi = bell_state('00')
+        rho = psi * psi.dag()
+        
+        # Reduced density matrices for each qubit
+        rho_a = rho.ptrace(0)
+        rho_b = rho.ptrace(1)
+        
+        b1 = Bloch()
+        b1.add_states(rho_a)
+        b1.show()
+        
+        b2 = Bloch()
+        b2.add_states(rho_b)
+        b2.show()
+
+    # New: Simple Evolutionary Algorithm with Torch (Darwin)
+    def darwin_evolutionary(self):
+        # Simple GA to optimize a quadratic function (simulate convergence)
+        def fitness(x):
+            return -torch.sum(x**2)  # Maximize to 0
+        
+        population_size = 50
+        dim = 10
+        generations = 100
+        population = torch.randn(population_size, dim)
+        
+        for gen in range(generations):
+            fits = torch.tensor([fitness(ind) for ind in population])
+            parents = population[torch.topk(fits, population_size//2).indices]
+            children = parents + 0.1 * torch.randn_like(parents)
+            population = torch.cat([parents, children])
+        
+        best = population[torch.argmax(fits)]
+        print(f"Best evolved solution: {best}, Fitness: {fitness(best)}")
+
+    # New: Melts Pure Byte Data with Kubernetes/Java Combo (Placeholder)
+    def melts_pure_byte_data(self):
+        # Simple byte data transformation ("melts")
+        byte_data = bytearray(b'pure_byte_data')
+        melted = bytearray([b ^ 0xFF for b in byte_data])  # Invert bits
+        print(f"Melted byte data: {melted}")
+        
+        # Placeholder for Kubernetes/Java: Simulate thread weaving
+        def weaver_thread(data):
+            time.sleep(1)
+            return data[::-1]  # Reverse as "weaving"
+        
+        with mp.Pool(2) as pool:  # Cyber Loom Weaver with threads
+            woven = pool.map(weaver_thread, [melted, melted])
+        print(f"Woven data: {woven}")
+
+    # New: Cellular Automata like Globby (Game of Life)
+    def cellular_automata_globby(self):
+        N = 50
+        ON, OFF = 1, 0
+        grid = np.random.choice([ON, OFF], N*N, p=[0.2, 0.8]).reshape(N, N)
+        
+        def update(frameNum, img, grid, N):
+            newGrid = grid.copy()
+            for i in range(N):
+                for j in range(N):
+                    total = int((grid[i, (j-1)%N] + grid[i, (j+1)%N] +
+                                 grid[(i-1)%N, j] + grid[(i+1)%N, j] +
+                                 grid[(i-1)%N, (j-1)%N] + grid[(i-1)%N, (j+1)%N] +
+                                 grid[(i+1)%N, (j-1)%N] + grid[(i+1)%N, (j+1)%N]))
+                    if grid[i, j] == ON:
+                        if (total < 2) or (total > 3):
+                            newGrid[i, j] = OFF
+                    else:
+                        if total == 3:
+                            newGrid[i, j] = ON
+            img.set_array(newGrid)
+            grid[:] = newGrid[:]
+            return img,
+        
+        fig, ax = plt.subplots()
+        img = ax.imshow(grid, interpolation='nearest')
+        ani = plt.matplotlib.animation.FuncAnimation(fig, update, fargs=(img, grid, N),
+                                                     frames=50, interval=50, save_count=50)
+        plt.show()
+
+    # New: AI Game "Al Wars" on Hex Grid
+    def al_wars_game(self):
+        pygame.init()
+        screen = pygame.display.set_mode((800, 600))
+        pygame.display.set_caption("Al Wars: Hex Grid AI Agents")
+        clock = pygame.time.Clock()
+        
+        # Simple hex grid params
+        hex_size = 40
+        agents = [(200, 200), (400, 300), (600, 400)]  # Agent positions
+        colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+        
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    running = False
+            
+            screen.fill((0, 0, 0))
+            
+            # Draw hex grid (approximate)
+            for x in range(0, 800, hex_size * 2):
+                for y in range(0, 600, hex_size * 2):
+                    pygame.draw.polygon(screen, (100, 100, 100), 
+                                        [(x, y + hex_size), (x + hex_size, y),
+                                         (x + 2*hex_size, y), (x + 2*hex_size, y + hex_size),
+                                         (x + hex_size, y + 2*hex_size), (x, y + hex_size)])
+            
+            # Move agents randomly (simple AI)
+            for i in range(len(agents)):
+                dx, dy = np.random.randint(-10, 10), np.random.randint(-10, 10)
+                agents[i] = (agents[i][0] + dx, agents[i][1] + dy)
+                pygame.draw.circle(screen, colors[i], agents[i], 10)
+            
+            pygame.display.flip()
+            clock.tick(30)
+        
+        pygame.quit()
+
+    def boot_sequence(self):
+        print("V1 Creation / Forward Time:")
+        forward = self.generate_fib(10)
+        print(f"Fibonacci Forward: {forward}")
+        
+        self.ai_agent_interface()
+        self.llm_mass_compiler()
+        
+        states = self.simulate_quantum_evolution(steps=5)
+        print(f"Quantum State: {states[-1]}")
+        
+        print("\nV2 Destruction / Backward Time:")
+        backward = self.reverse_fib()
+        print(f"Fibonacci Backward: {backward}")
+        
+        # New features
+        self.hex_graph_structure()
+        self.trefoil_knot_plot()
+        self.bloch_sphere_entangled()
+        self.darwin_evolutionary()
+        self.melts_pure_byte_data()
+        self.cellular_automata_globby()
+        self.al_wars_game()
+        
+        print("Enhanced Kernel simulation complete.")
+
+if __name__ == "__main__":
+    kernel = QuantumFibonacciKernel()
+    kernel.boot_sequence()
